@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import path
 
 from shop.views import PremApiView, OnasApiView, HelpApiView, PublicApiView, NewsApiView, CategoryListApiView, \
-    SliderApiView, SvyazApiView, TovarApiView, PoiskApiViewfilter, FooterApiView, VyborApiView
+    SliderApiView, SvyazApiView, TovarApiView, PoiskApiViewfilter, FooterApiView, CartItemApiView, VyborApiView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -17,7 +18,9 @@ urlpatterns = [
     path('api/v9/', TovarApiView.as_view()),
     path('api/v10/nametovar/', PoiskApiViewfilter.as_view()),
     # path('api1/v11/<str:pk>/', SearchApi),
-    path('api/v12/', FooterApiView.as_view()),
-    path('api/v13/', VyborApiView.as_view()),
+    path('api/v11/', FooterApiView.as_view()),
+    path('api/v12/', VyborApiView.as_view()),
+    path('cart-items', CartItemApiView.as_view()),
+    path('cart-items/<int:id>', CartItemApiView.as_view())
 
 ]

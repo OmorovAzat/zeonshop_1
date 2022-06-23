@@ -1,11 +1,13 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import generics, pagination, filters, status
 from rest_framework.decorators import api_view
 
-from .models import Prem, Help, Public, News, Category, Slider, Svyaz, Onas, Tovar, Footer, Vybor
+from .models import Prem, Help, Public, News, Category, Slider, Svyaz, Onas, Tovar, Footer, CartItem, ShippingAddress, \
+    Vybor
 from .serializers import PremSerializer, HelpSerializer, \
     PublicSerializer, NewsSerializer, CategorySerializer, SliderSerializer, SvyazSerializer, OnasSerializer, \
-    PoiskSerializer, TovarSerializer, FooterSerializer, VyborSerlializer
+    PoiskSerializer, TovarSerializer, FooterSerializer, CartItemSerializer, ShippingAddressSerializer, VyborSerializer
 import random
 
 
@@ -73,17 +75,18 @@ class CustPagination(pagination.PageNumberPagination):
 
 
 class PoiskApiViewfilter(generics.ListAPIView):
-
-    queryset = Tovar.objects.all()
     serializer_class = PoiskSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['nametovar']
 
-
-    # def get_queryset(self):
-    #     ret=self.kwargs
-    #     print(self.kwargs)
-    #     # return Tovar.objects.filter(nametovar=ret)
+    # def get_queryset(self, request):
+    #     query = request.value
+    #
+    # queryset = Tovar.objects.filter(nametovaricontains='query', quantitygt=0)
+    # if not queryset:
+    #     return [Tovar.objects.filter(cat_id=i).order_by('?')[:1] for i in range(1, 6)]
+    # else:
+    #     return queryset[:12]
 
 
 class FooterApiView(generics.ListAPIView):
@@ -92,39 +95,7 @@ class FooterApiView(generics.ListAPIView):
 
 class VyborApiView(generics.ListAPIView):
     queryset = Vybor.objects.all()
-    serializer_class = VyborSerlializer
-
-
-
-
-
-
-
-
-    # def list_posik(self, request,):
-    #     aza = Tovar.objects.all()
-    #     Search_aza = PoiskSerializer(aza, many=True).data
-    #     return Response({
-    #         Search_aza
-    #     },
-    #         status=status.HTTP_200_OK)
-
-
-
-
-# @api_view(['GET'])
-# def SearchApi(request,*args, **daw,):
-#     queryset = Tovar.objects.all()
-#     serializer_class = PoiskSerializer
-#     filter_backends = [filters.SearchFilter]
-#     search_fields = ['nametovar']
-#     print(filter_backends)
-#
-#     return Response({
-#         'Азат':search_fields,
-#         'da': queryset
-#     },
-#         status=status.HTTP_200_OK)
+    serializer_class = VyborSerializer
 
 
 class TovarApiView(generics.ListAPIView):
@@ -136,7 +107,27 @@ class SliderApiView(generics.ListAPIView):
     queryset = Slider.objects.all()
     serializer_class = SliderSerializer
 
-# class NovinkiApiView(generics.ListAPIView):
-#     queryset = Tovar.objects.filter(newlst=True)
-#     serializer_class = NovinkiListSerializer
+class ShippingAddressApiView(generics.ListAPIView):
+    queryset = ShippingAddress.objects.all()
+    serializer_class = ShippingAddressSerializer
 
+
+class CartItemApiView(generics.ListAPIView):
+    queryset = CartItem.objects.all()
+    serializer_class = CartItemSerializer
+
+    def get(self, requset, id=None):
+        if id:
+            item = CartItem.objects.get(id=id)
+            serializer = CartItemSerializer(item)
+            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+
+        items = CartItem.objects.all()
+        serializer = CartItemSerializer(items, many=True)
+
+        return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+
+    def delete(self, request, id=None):
+        item = get_object_or_404(CartItem, id=id)
+        item.delete()
+        return Response({"status": "success", "data": "Успешно удалено!"})
