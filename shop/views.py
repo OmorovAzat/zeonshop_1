@@ -1,14 +1,17 @@
+import random
+from random import choice
+
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import generics, pagination, filters, status
-from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 
 from .models import Prem, Help, Public, News, Category, Slider, Svyaz, Onas, Tovar, Footer, CartItem, ShippingAddress, \
-    Vybor
+    Vybor, ProductItemImage
 from .serializers import PremSerializer, HelpSerializer, \
     PublicSerializer, NewsSerializer, CategorySerializer, SliderSerializer, SvyazSerializer, OnasSerializer, \
-    PoiskSerializer, TovarSerializer, FooterSerializer, CartItemSerializer, ShippingAddressSerializer, VyborSerializer
-import random
+    PoiskSerializer, TovarSerializer, FooterSerializer, CartItemSerializer, ShippingAddressSerializer, VyborSerializer, \
+    ProductItemImageSerializer
 
 
 class PremApiView(generics.ListAPIView):
@@ -19,6 +22,11 @@ class PremApiView(generics.ListAPIView):
 class OnasApiView(generics.ListAPIView):
     queryset = Onas.objects.all()
     serializer_class = OnasSerializer
+
+
+class ProductItemImageApiView(generics.ListAPIView):
+    queryset = ProductItemImage.objects.all()
+    serializer_class = ProductItemImageSerializer
 
 
 class HelpApiView(generics.ListAPIView):
@@ -75,9 +83,29 @@ class CustPagination(pagination.PageNumberPagination):
 
 
 class PoiskApiViewfilter(generics.ListAPIView):
+    queryset = Tovar.objects.all().order_by('-id')
     serializer_class = PoiskSerializer
     filter_backends = [filters.SearchFilter]
+    # search_fields = ['nametovar']
+
+
+class TovarRandomView(APIView):
+    serializer_class = TovarSerializer
+    queryset = Tovar.objects.all()
+    filter_backends = [filters.SearchFilter]
     search_fields = ['nametovar']
+
+
+    def get(self, request):
+        try:
+            category = list(Category.objects.values_list('id', flat=True).order_by('?'))
+            queryset = list(random.choice(self.queryset.filter(category__id=pk)) for pk in category)[:5]
+            serializer = self.serializer_class(queryset, many=True, context={'context': request})
+            return Response(serializer.data)
+        except IndexError:
+            queryset = self.queryset.order_by('?')[:5]
+            serializer = self.serializer_class(queryset, many=True, context={'context': request})
+            return Response(serializer.data)
 
     # def get_queryset(self, request):
     #     query = request.value
@@ -93,6 +121,7 @@ class FooterApiView(generics.ListAPIView):
     queryset = Footer.objects.all()
     serializer_class = FooterSerializer
 
+
 class VyborApiView(generics.ListAPIView):
     queryset = Vybor.objects.all()
     serializer_class = VyborSerializer
@@ -107,6 +136,7 @@ class SliderApiView(generics.ListAPIView):
     queryset = Slider.objects.all()
     serializer_class = SliderSerializer
 
+
 class ShippingAddressApiView(generics.ListAPIView):
     queryset = ShippingAddress.objects.all()
     serializer_class = ShippingAddressSerializer
@@ -115,6 +145,14 @@ class ShippingAddressApiView(generics.ListAPIView):
 class CartItemApiView(generics.ListAPIView):
     queryset = CartItem.objects.all()
     serializer_class = CartItemSerializer
+
+    def post(self, request):
+        serializer = CartItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({"status": "error", "data": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, requset, id=None):
         if id:

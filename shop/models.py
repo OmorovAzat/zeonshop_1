@@ -59,7 +59,6 @@ class Onas(models.Model):
 
 
 # Помощь
-
 class Help(models.Model):
     question = models.TextField(max_length=150, verbose_name='Вопрос')
     answer = models.TextField(max_length=150, verbose_name='Ответ')
@@ -74,7 +73,6 @@ class Help(models.Model):
 
 
 # Публичная оферта
-
 class Public(models.Model):
     ugolok = models.TextField(max_length=150, verbose_name='Заголовок')
     opisanie = RichTextField(blank=True, verbose_name='Описание')
@@ -87,7 +85,6 @@ class Public(models.Model):
 
 
 # Новости
-
 class News(models.Model):
     photonews = models.ImageField(upload_to=None,
                                   height_field=None, width_field=None,
@@ -104,7 +101,6 @@ class News(models.Model):
 
 
 # Коллекция
-
 class Category(models.Model):
     photocolect = models.ImageField(upload_to=None,
                                     height_field=None,
@@ -121,7 +117,6 @@ class Category(models.Model):
 
 
 # Слайдер
-
 class Slider(models.Model):
     sliderpole = models.ImageField(upload_to=None,
                                    height_field=None,
@@ -138,7 +133,6 @@ class Slider(models.Model):
 
 
 # Обратная связь
-
 class Svyaz(models.Model):
     namepole = models.CharField(max_length=100, blank=True, verbose_name='Имя')
     numberpole = models.CharField(max_length=200,
@@ -154,8 +148,7 @@ class Svyaz(models.Model):
         return self.namepole
 
 
-"""Товары"""
-
+# Товары
 
 class Tovar(models.Model):
     category = models.ForeignKey(Category,
@@ -180,9 +173,6 @@ class Tovar(models.Model):
     poiskizbrannye = models.BooleanField(verbose_name='Избранные')
     hitofsales = models.BooleanField(verbose_name='Хит продаж')
     newtov = models.BooleanField(verbose_name='Новинки')
-    colortovar = ColorField(choices=COLOR_PALETTE, verbose_name='Цвет товару')
-    image_item = models.ImageField(upload_to='None/%Y/%m/%d',
-                                   null=True, blank=True)
 
     def __str__(self):
         return str(self.nametovar)
@@ -191,8 +181,12 @@ class Tovar(models.Model):
         if self.pricediscount:
             self.pricetovar = int(self.old_price *
                                   (100 - self.pricediscount) / 100)
-            self.quantity_inline_tovar = (int(self.size_range[3:]) - int(self.size_range[0:2]) + 2) // 2
+            self.quantity_inline_tovar = (int
+                                          (self.size_range[3:]) -
+                                          int(self.size_range[0:2]) + 2) // 2
             print(self.size_range)
+            print(self.quantity_inline_tovar)
+
         else:
             self.pricetovar = None
         super(Tovar, self).save(*args, *kwargs)
@@ -202,23 +196,7 @@ class Tovar(models.Model):
         ordering = ('nametovar',)
 
 
-# class TovarItem(models.Model):
-#     TovarItem = models.ForeignKey(Tovar,
-#     related_name='tovar',
-#     on_delete=models.CASCADE)
-#
-#     colortovar = ColorField(choices=COLOR_PALETTE)
-#
-#     class Meta:
-#         verbose_name_plural = "Цвет товара"
-#
-#     def __str__(self):
-#         return str(self.colortovar)
-
-
 # Фотография
-
-
 def validate_even(value):
     if value == 2:
         raise ValidationError(
@@ -227,19 +205,17 @@ def validate_even(value):
         )
 
 
-# class ProductItemImage(models.Model):
-#     product = models.ForeignKey(Tovar,
-#     on_delete=models.CASCADE,
-#     related_name='product_item_image')
-#     image = models.ImageField(upload_to='None/%Y/%m/%d',
-#     null=True, blank=True,
-#     validators=[validate_even])
-#
-#     class Meta:
-#         verbose_name_plural = "Фото для продукта"
-#
-#     def __str__(self):
-#         return str(self.product)
+class ProductItemImage(models.Model):
+    product = models.ForeignKey(Tovar, on_delete=models.CASCADE,
+                                related_name='product_item_image')
+    image = models.ImageField(upload_to='None/%Y/%m/%d',
+                              null=True, blank=True,
+                              validators=[validate_even])
+    colortovar = ColorField(choices=COLOR_PALETTE)
+
+    def __str__(self):
+        return str(self.product)
+
 
 """Выборка Футера"""
 
@@ -301,10 +277,6 @@ class Vybor(models.Model):
     def __str__(self):
         return str(self.info_footer)
 
-
-#
-#     def __str__(self):
-#         return self.contacts
 
 """Корзина"""
 
@@ -386,13 +358,13 @@ class CartItem(models.Model):
     quantity_inline_tovar = models.IntegerField(null=True,
                                                 blank=True,
                                                 verbose_name='К-во в линейке')
-    quantity_cart_lines = models.IntegerField(null=True,
-                                              blank=True,
-                                              default=0,
-                                              verbose_name='К-во всехтов в лке')
-    price_cart = models.IntegerField(null=True,
-                                     blank=True,
-                                     verbose_name='Сумма всех линеек')
+    # quantity_cart_lines = models.IntegerField(null=True,
+    #                                           blank=True,
+    #                                           default=0,
+    #                                           verbose_name='К-во всхтов в лке')
+    # price_cart = models.IntegerField(null=True,
+    #                                  blank=True,
+    #                                  verbose_name='Сумма всех линеек')
     sale_item = models.IntegerField(null=True,
                                     blank=True, default=0,
                                     verbose_name='Сумма всех скидок')
@@ -405,8 +377,10 @@ class CartItem(models.Model):
 
     def save(self, *args, **kwargs):
         self.price_item = self.oldpirce_item * self.quantity_item_lines
-        self.quantity_item_lines = int(self.quantity_inline_tovar * self.quantity_item_lines)
-        self.sale_item_cart = (self.oldpirce_item - self.price_item) * self.quantity_item
+        self.quantity_item_lines = \
+            int(self.quantity_inline_tovar * self.quantity_item_lines)
+        self.sale_item_cart =\
+            (self.oldpirce_item - self.price_item) * self.quantity_item
         self.result_price = self.price_item * self.quantity_item_lines
         super().save(*args, *kwargs)
 
