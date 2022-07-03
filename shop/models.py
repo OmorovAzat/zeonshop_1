@@ -24,6 +24,13 @@ CONTACT = [
     ('WhatsApp', 'WhatsApp',),
 ]
 
+Status = (
+    ('Оформлен', 'Оформлен'),
+    ('Отменен', 'Отменен'),
+    ('Новый', 'Новый'),
+
+)
+
 
 # Примушества
 class Prem(models.Model):
@@ -228,7 +235,6 @@ class Footer(models.Model):
     contacts = MultiSelectField(choices=CONTACT,
                                 max_length=150, max_choices=150,
                                 verbose_name='Выбор из списка')
-    telnum = models.CharField(max_length=100, blank=True, verbose_name='Номер')
     mail = models.EmailField(max_length=100, verbose_name='Почта')
     insta = models.CharField(max_length=100,
                              null=True, blank=True,
@@ -268,6 +274,7 @@ class Vybor(models.Model):
                               blank=True, verbose_name='Логотип для Хедера')
     foter = models.ImageField(upload_to='None/%Y/%m/%d',
                               blank=True, verbose_name='Логотип для Футера')
+    telnum = models.CharField(max_length=100, blank=True, verbose_name='Номер')
     info_footer = models.CharField(max_length=100, null=True,
                                    blank=True, verbose_name='Инфо')
 
@@ -278,20 +285,73 @@ class Vybor(models.Model):
         return str(self.info_footer)
 
 
+# class CarzinaTotal(models.Model):
+#     date_ordered = models.DateTimeField(auto_now_add=True)
+
+
 """Корзина"""
 
 
 class Cart(models.Model):
     product = models.ForeignKey(Tovar, on_delete=models.CASCADE,
                                 related_name='cart_product', blank=True)
-    image_cart = models.ImageField(upload_to='None/%Y/%m/%d',
-                                   blank=True, verbose_name='Фото товара')
-    color_item_cart = ColorField(choices=COLOR_PALETTE,
-                                 verbose_name='Цвет товара')
-    price_item = models.IntegerField(blank=True, verbose_name='Цена')
+    # personcart = models.ForeignKey(CarzinaTotal, on_delete=models.CASCADE,
+    #                                related_name='cart_plus', blank=True)
+    # price_item = models.IntegerField(blank=True, verbose_name='Цена')
     quantity_item = models.IntegerField(default=1, null=True, blank=True,
                                         verbose_name='Количество Товара')
-    quantity_inline_tovar = models.IntegerField(verbose_name='К-во в линейке')
+    cart_qantinline = models.IntegerField(verbose_name='К-во в линейке')
+
+    def save(self, force_insert=False,
+             force_update=False, using=None, update_fields=None
+             ):
+        # print(self.product.pricediscount)
+        if self.product.pricediscount:
+            self.cart_qantinline = (int
+                                    (self.product.size_range[3:]) -
+                                    int(self.product.size_range[0:2]) + 2) // 2
+            print(self.cart_qantinline)
+        else:
+            self.product.pricetovar = self.product.old_price * \
+                                      self.cart_qantinline
+            self.quantity_item = \
+                self.cart_qantinline * self.product.cart_qantinline
+            print(self.quantity_item)
+        super(Cart, self).save()
+
+    @staticmethod
+    def total_before_discound():
+        """Общая стоимость до скидки"""
+        total = 0
+        for cart_product in Cart.objects.all():
+            total += cart_product.product.old_price * \
+                     cart_product.cart_qantinline
+            return total
+
+    @staticmethod
+    def total_price_after_discound():
+        """Общая стоимость после скидок"""
+        total = 0
+        for cart_product in Cart.objects.all():
+            total += cart_product.product.pricetovar * \
+                     cart_product.cart_qantinline
+            return total
+
+    @staticmethod
+    def quantity_tovarov():
+        """Колчество всех товаров"""
+        total = 0
+        for cart_product in Cart.objects.all():
+            total += cart_product.quantity_item
+            return total
+
+    @staticmethod
+    def total_quantity():
+        """Колчество общих линейки"""
+        total = 0
+        for cart_product in Cart.objects.all():
+            total += cart_product.cart_qantinline
+            return total
 
     def __str__(self):
         return str(self.product)
@@ -300,12 +360,6 @@ class Cart(models.Model):
         verbose_name_plural = 'Корзина'
 
 
-Status = (
-    ('Оформлен', 'Оформлен'),
-    ('Отменен', 'Отменен'),
-    ('Новый', 'Новый'),
-
-)
 """Инфо о покупателя"""
 
 
@@ -330,7 +384,7 @@ class ShippingAddress(models.Model):
         verbose_name_plural = 'Адрес доставки'
 
     def __str__(self):
-        return str(self.country)
+        return str(self.name_cust)
 
 
 """Оформление Заказа"""
@@ -338,36 +392,30 @@ class ShippingAddress(models.Model):
 
 class CartItem(models.Model):
     cart = models.ManyToManyField(Cart, related_name='custom_cart', blank=True)
-    price_item = models.IntegerField(null=True,
-                                     blank=True,
-                                     default=0, verbose_name='Цена')
-    oldpirce_item = models.IntegerField(null=True,
-                                        blank=True,
-                                        default=0,
-                                        verbose_name='Старая Цена')
-    sale_item_cart = models.IntegerField(null=True,
+    price_itemcart = models.IntegerField(null=True,
                                          blank=True,
-                                         default=0,
-                                         verbose_name='Скидка')
-    quantity_item = models.IntegerField(default=1,
-                                        null=True, blank=True,
-                                        verbose_name='Количество Товара')
+                                         default=0, verbose_name='Цена')
+    cart_discount = models.IntegerField(default=0,
+                                        verbose_name='Процент скидки')
+    cart_oldprice = models.IntegerField(verbose_name='Старая Цена')
+    size_cart = models.CharField(max_length=100, null=True,
+                                 blank=True, verbose_name='Размерный ряд')
     quantity_item_lines = models.IntegerField(null=True,
-                                              blank=True, default=0,
-                                              verbose_name='Кв-о всех линеек')
-    quantity_inline_tovar = models.IntegerField(null=True,
-                                                blank=True,
-                                                verbose_name='К-во в линейке')
-    # quantity_cart_lines = models.IntegerField(null=True,
-    #                                           blank=True,
-    #                                           default=0,
-    #                                           verbose_name='К-во всхтов в лке')
-    # price_cart = models.IntegerField(null=True,
-    #                                  blank=True,
-    #                                  verbose_name='Сумма всех линеек')
+                                              blank=True, default=1,
+                                              verbose_name='Кв-о линеек')
+    quantity_cart_lines = models.IntegerField(null=True,
+                                              blank=True,
+                                              default=0,
+                                              verbose_name='К-во всхтов в лке')
+
+    sale_item_before_disc = models.IntegerField(null=True,
+                                                blank=True, default=0,
+                                                verbose_name='Общая '
+                                                             'сумма до учета'
+                                                             ' скидок')
     sale_item = models.IntegerField(null=True,
                                     blank=True, default=0,
-                                    verbose_name='Сумма всех скидок')
+                                    verbose_name='Сумма после скидок')
     result_price = models.IntegerField(null=True,
                                        blank=True, default=0,
                                        verbose_name='Итого к оплате')
@@ -375,14 +423,24 @@ class CartItem(models.Model):
                              on_delete=models.CASCADE, null=True,
                              related_name='user', blank=True)
 
-    def save(self, *args, **kwargs):
-        self.price_item = self.oldpirce_item * self.quantity_item_lines
-        self.quantity_item_lines = \
-            int(self.quantity_inline_tovar * self.quantity_item_lines)
-        self.sale_item_cart =\
-            (self.oldpirce_item - self.price_item) * self.quantity_item
-        self.result_price = self.price_item * self.quantity_item_lines
-        super().save(*args, *kwargs)
+    def save(self, force_insert=False,
+             force_update=False,
+             using=None,
+             update_fields=None
+             ):
+        self.price_itemcart = int(self.cart_oldprice *
+                                  (100 - self.cart_discount) / 100)
+        # print(self.price_itemcart, Цена если есть скидка)
+        dis = self.cart_oldprice * self.cart_discount / 100
+        self.price = self.price_itemcart - dis
+        self.quantity_cart_lines = (int
+                                    (self.size_cart[3:]) -
+                                    int(self.size_cart[0:2]) + 2) // 2
+        self.sale_item_before_disc = self.cart_oldprice
+        self.sale_item = self.cart_oldprice * self.cart_discount / 100
+        self.result_price = self.sale_item = \
+            self.cart_oldprice * self.cart_discount / 100
+        super(CartItem, self).save()
 
     def __str__(self):
         return str(self.cart)

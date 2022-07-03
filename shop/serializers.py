@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from .models import Prem, Onas, Public, Help, News, Category, Slider, Svyaz, Tovar, Footer, CartItem, ShippingAddress, \
-    Vybor, ProductItemImage
+from .models import Prem, Onas, Public, Help, News, Category, \
+    Slider, Svyaz, Tovar, Footer, CartItem, ShippingAddress, \
+    Vybor, ProductItemImage, Cart
 
 
 # Наши преимущества
@@ -69,33 +70,41 @@ class ProductItemImageSerializer(serializers.ModelSerializer):
 # Товар
 class TovarSerializer(serializers.ModelSerializer):
     class Meta:
-        product_item_image = ProductItemImageSerializer(many=True, read_only=True)
+        product_item_image = ProductItemImageSerializer(many=True,
+                                                        read_only=True)
         # tovar = TovarItemSerializer(many=True, read_only=True)
         model = Tovar
-        fields = ('id', 'category', 'slug', 'nametovar', 'pricetovar', 'imagetovar', 'old_price', 'pricediscount',
-                  'size_range', 'descriptiontovar', 'articul', 'material', 'tkan', 'poiskizbrannye', 'hitofsales',
+        fields = ('id', 'category', 'slug', 'nametovar',
+                  'pricetovar', 'imagetovar',
+                  'old_price', 'pricediscount',
+                  'size_range', 'descriptiontovar', 'articul',
+                  'material', 'tkan', 'poiskizbrannye', 'hitofsales',
                   'newtov', 'quantity_inline_tovar')
 
 
 class SimpleTovarSerializer(serializers.ModelSerializer):
     class Meta:
-        product_item_image = ProductItemImageSerializer(many=True, read_only=True)
+        product_item_image = ProductItemImageSerializer(many=True,
+                                                        read_only=True)
         # tovar = TovarItemSerializer(many=True, read_only=True)
         model = Tovar
 
-    fields = ('id', 'category', 'nametovar', 'pricetovar', 'old_price', 'pricediscount')
+    fields = ('id', 'category', 'nametovar', 'pricetovar',
+              'old_price', 'pricediscount')
 
 
 # Поиск
 class PoiskSerializer(serializers.ModelSerializer):
-    # product_item_image = ProductItemImageSerializer(many=True, read_only=True)
+    # product_item_image = ProductItemImageSerializer(many=True,
+    # read_only=True)
 
     # tovar = TovarItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Tovar
         fields = (
-            'id', 'nametovar', 'category', 'nametovar', 'pricetovar', 'old_price', 'pricediscount',
+            'id', 'nametovar', 'category', 'nametovar',
+            'pricetovar', 'old_price', 'pricediscount',
             'poiskizbrannye', 'hitofsales', 'newtov', 'imagetovar')
 
 
@@ -118,7 +127,7 @@ class FooterSerializer(serializers.ModelSerializer):
 class VyborSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vybor
-        fields = ('heder', 'foter', 'info_footer')
+        fields = ('heder', 'foter', 'info_footer', 'telnum')
 
 
 # оформление
@@ -134,9 +143,15 @@ class ShippingAddressSerializer(serializers.ModelSerializer):
         model = ShippingAddress
         fields = ('__all__')
 
-class TovarRandomSerializer(serializers.ModelSerializer):
+
+class CartSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Tovar
+        model = Cart
         fields = ('__all__')
 
 
+# class CarzinaTotalSerializer(serializers.ModelSerializer):
+#
+#     class Meta:
+#         model = CarzinaTotal
+#         fields = ('__all__')

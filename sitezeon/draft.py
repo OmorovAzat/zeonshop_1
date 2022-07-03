@@ -1,25 +1,11 @@
-import random
+def azat(func):
+    def wrapper():
+        print('Yasuo')
+        func()
+        print('zed')
+        return wrapper()
 
+def ddd():
+    print("legeu")
 
-katerand_list = ("Ali", "Azat", "Aman", "Oskon", "Ismail")
-
-print(random.choice(katerand_list))
-
-
-
-# class IzbrannyeApiView(generics.ListAPIView):
-#     queryset = Tovar.objects.filter(available=True)[0:12]
-#     serializer_class = IzbrannyeSerializer
-
-
-class SliderApiView(generics.ListAPIView):
-    queryset = Slider.objects.all()
-    serializer_class = SliderSerializer
-#
-# class NovinkiApiView(generics.ListAPIView):
-#     queryset = Tovar.objects.filter(newlst=True)
-#     serializer_class = NovinkiListSerializer
-
-
-
-# class Hitofsales
+    ddd = azat(ddd())
